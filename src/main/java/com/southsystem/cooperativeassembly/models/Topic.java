@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 public class Topic {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long topic_id;
 
     private String topic;
 

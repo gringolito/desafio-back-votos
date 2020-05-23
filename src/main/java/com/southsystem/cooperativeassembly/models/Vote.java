@@ -14,18 +14,18 @@ import javax.validation.constraints.Pattern;
 public class Vote {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long Id;
+    private Long vote_id;
 
     @NotNull
     @OneToOne
-    @JoinColumn(name = "id")
+    @JoinColumn(name = "associate_id")
     private Associate associate;
 
     @Pattern(regexp = "Sim|Não")
     private String vote;
 
     @ManyToOne()
-    @JoinColumn(name = "id")
+    @JoinColumn(name = "voting_session_id")
     @JsonIgnore
-    private VotingSession votingSession;
+    private VotingSession voting_session;
 }

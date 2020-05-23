@@ -14,7 +14,7 @@ import java.util.List;
 public class VotingSession {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long voting_session_id;
 
     @NotNull
     @OneToOne
@@ -24,6 +24,6 @@ public class VotingSession {
     @NotNull
     private LocalDateTime expires;
 
-    @OneToMany(mappedBy = "votingSession")
+    @OneToMany(mappedBy = "voting_session")
     private List<Vote> votes;
 }

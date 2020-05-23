@@ -15,7 +15,7 @@ import javax.validation.constraints.NotNull;
 public class Associate {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long associate_id;
 
     @NotNull
     private String cpf;

@@ -24,15 +24,16 @@ public class VotingSessionService {
     }
 
     public VotingSession getSession(Long id) {
-        return repository.getOne(id);
-    }
-
-    public VotingSessionReport generateReport(Long id) {
-        VotingSession session = getSession(id);
+        VotingSession session = repository.getOne(id);
         if (session == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
+        return session;
+    }
+
+    public VotingSessionReport generateReport(Long id) {
+        VotingSession session = getSession(id);
         return VotingSessionReport
                 .builder()
                 .topic(session.getTopic())
@@ -54,7 +55,6 @@ public class VotingSessionService {
     public VotingSession openSession(VotingSession session) {
         validateTopic(session);
         validateExpires(session);
-
         return repository.saveAndFlush(session);
     }
 

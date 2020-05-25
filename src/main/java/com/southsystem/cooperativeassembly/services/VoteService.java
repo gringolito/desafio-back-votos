@@ -41,7 +41,12 @@ public class VoteService {
     }
 
     public Vote getVote(Long id) {
-        return repository.getOne(id);
+        Vote vote = repository.getOne(id);
+        if (vote == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+
+        return vote;
     }
 
     public Vote addVote(Vote vote) {

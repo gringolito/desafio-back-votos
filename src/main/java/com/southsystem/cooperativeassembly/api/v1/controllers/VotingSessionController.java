@@ -1,10 +1,12 @@
 package com.southsystem.cooperativeassembly.api.v1.controllers;
 
-import com.southsystem.cooperativeassembly.dtos.VotingSessionReport;
-import com.southsystem.cooperativeassembly.models.VotingSession;
+import com.southsystem.cooperativeassembly.dtos.VotingSessionRequestDTO;
+import com.southsystem.cooperativeassembly.dtos.VotingSessionResponseDTO;
+import com.southsystem.cooperativeassembly.dtos.VotingSessionReportDTO;
 import com.southsystem.cooperativeassembly.services.VotingSessionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,25 +18,29 @@ public class VotingSessionController {
     private VotingSessionService service;
 
     @GetMapping
-    public List<VotingSession> list() {
-        return service.getAllSessions();
+    public ResponseEntity<List<VotingSessionResponseDTO>> list() {
+        List<VotingSessionResponseDTO> sessions = service.getAllSessions();
+        return new ResponseEntity<>(sessions, HttpStatus.OK);
     }
 
     @GetMapping
     @RequestMapping("{id}")
-    public VotingSession get(@PathVariable Long id) {
-        return service.getSession(id);
+    public ResponseEntity<VotingSessionResponseDTO> get(@PathVariable Long id) {
+        VotingSessionResponseDTO session = service.getSession(id);
+        return new ResponseEntity<>(session, HttpStatus.OK);
     }
 
     @GetMapping
     @RequestMapping("{id}/report")
-    public VotingSessionReport report(@PathVariable Long id) {
-        return service.generateReport(id);
+    public ResponseEntity<VotingSessionReportDTO> report(@PathVariable Long id) {
+        VotingSessionReportDTO report = service.generateReport(id);
+        return new ResponseEntity<>(report, HttpStatus.OK);
     }
 
     @PostMapping
     @ResponseStatus(code = HttpStatus.CREATED)
-    public VotingSession create(@RequestBody final VotingSession votingSession) {
-        return service.openSession(votingSession);
+    public ResponseEntity<VotingSessionResponseDTO> create(@RequestBody final VotingSessionRequestDTO request) {
+        VotingSessionResponseDTO response = service.openSession(request);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 }

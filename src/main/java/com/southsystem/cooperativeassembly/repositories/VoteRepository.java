@@ -7,5 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface VoteRepository extends JpaRepository<Vote, Long> {
     Long countVotesByVotingSessionAndVote(VotingSession session, String vote);
 
-    Vote findFirstByVotingSessionAndAssociateCpf(VotingSession session, String cpf);
+    Vote findFirstByVotingSessionAndCpf(VotingSession session, String cpf);
 }

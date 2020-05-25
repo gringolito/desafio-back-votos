@@ -1,9 +1,11 @@
 package com.southsystem.cooperativeassembly.api.v1.controllers;
 
-import com.southsystem.cooperativeassembly.models.Vote;
+import com.southsystem.cooperativeassembly.dtos.VoteRequestDTO;
+import com.southsystem.cooperativeassembly.dtos.VoteResponseDTO;
 import com.southsystem.cooperativeassembly.services.VoteService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,19 +17,21 @@ public class VoteController {
     private VoteService service;
 
     @GetMapping
-    public List<Vote> list() {
-        return service.getAllVotes();
+    public ResponseEntity<List<VoteResponseDTO>> list() {
+        List<VoteResponseDTO> votes = service.getAllVotes();
+        return new ResponseEntity<>(votes, HttpStatus.OK);
     }
 
     @GetMapping
     @RequestMapping("{id}")
-    public Vote get(@PathVariable Long id) {
-        return service.getVote(id);
+    public ResponseEntity<VoteResponseDTO> get(@PathVariable Long id) {
+        VoteResponseDTO vote = service.getVote(id);
+        return new ResponseEntity<>(vote, HttpStatus.OK);
     }
 
     @PostMapping
-    @ResponseStatus(code = HttpStatus.CREATED)
-    public Vote create(@RequestBody final Vote vote) {
-        return service.addVote(vote);
+    public ResponseEntity<VoteResponseDTO> create(@RequestBody final VoteRequestDTO request) {
+        VoteResponseDTO response = service.addVote(request);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 }

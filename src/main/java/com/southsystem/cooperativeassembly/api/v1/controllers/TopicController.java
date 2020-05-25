@@ -1,9 +1,11 @@
 package com.southsystem.cooperativeassembly.api.v1.controllers;
 
-import com.southsystem.cooperativeassembly.models.Topic;
+import com.southsystem.cooperativeassembly.dtos.TopicRequestDTO;
+import com.southsystem.cooperativeassembly.dtos.TopicResponseDTO;
 import com.southsystem.cooperativeassembly.services.TopicService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,19 +17,21 @@ public class TopicController {
     private TopicService service;
 
     @GetMapping
-    public List<Topic> list() {
-        return service.getAllTopics();
+    public ResponseEntity<List<TopicResponseDTO>> list() {
+        List<TopicResponseDTO> topics = service.getAllTopics();
+        return new ResponseEntity<>(topics, HttpStatus.OK);
     }
 
     @GetMapping
     @RequestMapping("{id}")
-    public Topic get(@PathVariable Long id) {
-        return service.getTopic(id);
+    public ResponseEntity<TopicResponseDTO> get(@PathVariable Long id) {
+        TopicResponseDTO topic = service.getTopic(id);
+        return new ResponseEntity<>(topic, HttpStatus.OK);
     }
 
     @PostMapping
-    @ResponseStatus(code = HttpStatus.CREATED)
-    public Topic create(@RequestBody final Topic topic) {
-        return service.createTopic(topic);
+    public ResponseEntity<TopicResponseDTO> create(@RequestBody final TopicRequestDTO request) {
+        TopicResponseDTO response = service.createTopic(request);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 }

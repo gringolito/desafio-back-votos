@@ -1,6 +1,11 @@
 package com.southsystem.cooperativeassembly.services;
 
-import com.southsystem.cooperativeassembly.dtos.VotingSessionReport;
+import com.southsystem.cooperativeassembly.converters.TopicConverter;
+import com.southsystem.cooperativeassembly.converters.VoteConverter;
+import com.southsystem.cooperativeassembly.converters.VotingSessionConverter;
+import com.southsystem.cooperativeassembly.dtos.VotingSessionReportDTO;
+import com.southsystem.cooperativeassembly.dtos.VotingSessionRequestDTO;
+import com.southsystem.cooperativeassembly.dtos.VotingSessionResponseDTO;
 import com.southsystem.cooperativeassembly.models.VotingSession;
 import com.southsystem.cooperativeassembly.repositories.VotingSessionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,27 +22,40 @@ public class VotingSessionService {
     VotingSessionRepository repository;
 
     @Autowired
+    VotingSessionConverter sessionConverter;
+
+    @Autowired
+    TopicConverter topicConverter;
+
+    @Autowired
+    VoteConverter voteConverter;
+
+    @Autowired
     VoteService voteService;
 
-    public List<VotingSession> getAllSessions() {
-        return repository.findAll();
+    public List<VotingSessionResponseDTO> getAllSessions() {
+        return sessionConverter.toResponseDTO(repository.findAll());
     }
 
-    public VotingSession getSession(Long id) {
+    public VotingSessionResponseDTO getSession(Long id) {
+        VotingSession session = getVotingSession(id);
+
+        return sessionConverter.toResponseDTO(session);
+    }
+
+    public VotingSession getVotingSession(Long id) {
         VotingSession session = repository.getOne(id);
         if (session == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
-
         return session;
     }
 
-    public VotingSessionReport generateReport(Long id) {
-        VotingSession session = getSession(id);
-        return VotingSessionReport
-                .builder()
-                .topic(session.getTopic())
-                .votes(session.getVotes())
+    public VotingSessionReportDTO generateReport(Long id) {
+        VotingSession session = getVotingSession(id);
+        return VotingSessionReportDTO.builder()
+                .topic(topicConverter.toResponseDTO(session.getTopic()))
+                .votes(voteConverter.toResponseDTO(session.getVotes()))
                 .expired(session.getExpires().isBefore(LocalDateTime.now()))
                 .yes(getYesVotes(session))
                 .no(getNoVotes(session))
@@ -52,10 +70,11 @@ public class VotingSessionService {
         return voteService.getNoVotesBySession(session);
     }
 
-    public VotingSession openSession(VotingSession session) {
+    public VotingSessionResponseDTO openSession(VotingSessionRequestDTO request) {
+        VotingSession session = sessionConverter.toModel(request);
         validateTopic(session);
         validateExpires(session);
-        return repository.saveAndFlush(session);
+        return sessionConverter.toResponseDTO(repository.saveAndFlush(session));
     }
 
     private void validateExpires(VotingSession session) {

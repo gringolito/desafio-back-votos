@@ -12,16 +12,16 @@ import javax.validation.constraints.Pattern;
 @Data
 @NoArgsConstructor
 @Entity(name = "votes")
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"associate_cpf", "voting_session_id"}, name = "per_session_unique"))
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"cpf", "voting_session_id"}, name = "per_session_unique"))
 public class Vote {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long vote_id;
+    @Column(name = "vote_id")
+    private Long voteId;
 
     @NotNull
-    @Column(name = "associate_cpf")
-    private String associateCpf;
+    @Column(name = "cpf")
+    private String cpf;
 
     @NotNull
     @Pattern(regexp = "Sim|Não")
@@ -30,6 +30,5 @@ public class Vote {
     @NotNull
     @ManyToOne()
     @JoinColumn(name = "voting_session_id")
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private VotingSession votingSession;
 }

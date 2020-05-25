@@ -1,6 +1,8 @@
 package com.southsystem.cooperativeassembly.api.v1.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.southsystem.cooperativeassembly.dtos.TopicRequestDTO;
+import com.southsystem.cooperativeassembly.dtos.TopicResponseDTO;
 import com.southsystem.cooperativeassembly.models.Topic;
 import com.southsystem.cooperativeassembly.services.TopicService;
 import org.junit.Test;
@@ -50,20 +52,21 @@ public class TopicControllerUnitTest {
 
     @Test
     public void getOk() throws Exception {
-        Topic topic = new Topic();
-        topic.setTopic_id(Long.valueOf(1));
-        topic.setTopic("Director Salary Raise");
-        topic.setDate(LocalDateTime.of(2020, 03, 04, 12, 01, 02, 03));
+        TopicResponseDTO topic = TopicResponseDTO.builder()
+                .id(Long.valueOf(1))
+                .topic("Director Salary Raise")
+                .created(LocalDateTime.of(2020, 03, 04, 12, 01, 02, 03))
+                .build();
         doReturn(topic).when(service).getTopic(Long.valueOf(1));
 
         mvc.perform(get("/api/v1/topics/1"))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("topic_id").value(topic.getTopic_id()))
+                .andExpect(jsonPath("id").value(topic.getId()))
                 .andExpect(jsonPath("topic").value(topic.getTopic()))
                 .andExpect(jsonPath("description").value(topic.getDescription()))
-                .andExpect(jsonPath("date").value(topic.getDate().toString()));
+                .andExpect(jsonPath("created").value(topic.getCreated().toString()));
 
         verify(service, times(1)).getTopic(Long.valueOf(1));
     }
@@ -90,15 +93,15 @@ public class TopicControllerUnitTest {
 
     @Test
     public void createOk() throws Exception {
-        Topic response = new Topic();
-        response.setTopic_id(Long.valueOf(1));
-        response.setTopic("Director Salary Raise");
-        response.setDate(LocalDateTime.of(2020, 03, 04, 12, 01, 02, 03));
+        TopicResponseDTO response = TopicResponseDTO.builder()
+                .id(Long.valueOf(1))
+                .topic("Director Salary Raise")
+                .created(LocalDateTime.of(2020, 03, 04, 12, 01, 02, 03))
+                .build();
+        doReturn(response).when(service).createTopic(any(TopicRequestDTO.class));
 
-        doReturn(response).when(service).createTopic(any(Topic.class));
-
-        Topic request = new Topic();
-        request.setDescription("Director Salary Raise");
+        TopicRequestDTO request = new TopicRequestDTO();
+        request.setTopic("Director Salary Raise");
         String json = new ObjectMapper().writeValueAsString(request);
 
         mvc.perform(post("/api/v1/topics")
@@ -106,20 +109,20 @@ public class TopicControllerUnitTest {
                 .content(json))
                 .andExpect(status().isCreated())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("topic_id").value(response.getTopic_id()))
+                .andExpect(jsonPath("id").value(response.getId()))
                 .andExpect(jsonPath("topic").value(response.getTopic()))
                 .andExpect(jsonPath("description").value(response.getDescription()))
-                .andExpect(jsonPath("date").value(response.getDate().toString()));
+                .andExpect(jsonPath("created").value(response.getCreated().toString()));
 
-        verify(service, times(1)).createTopic(any(Topic.class));
+        verify(service, times(1)).createTopic(any(TopicRequestDTO.class));
     }
 
     @Test(expected = Exception.class)
     public void createFail() throws Exception {
-        doThrow(Exception.class).when(service).createTopic(any(Topic.class));
+        doThrow(Exception.class).when(service).createTopic(any(TopicRequestDTO.class));
 
-        Topic request = new Topic();
-        request.setDescription("Intern Salary Raise");
+        TopicRequestDTO request = new TopicRequestDTO();
+        request.setTopic("Intern Salary Raise");
         String json = new ObjectMapper().writeValueAsString(request);
 
         mvc.perform(post("/api/v1/topics")
@@ -127,12 +130,12 @@ public class TopicControllerUnitTest {
                 .content(json))
                 .andExpect(status().is5xxServerError());
 
-        verify(service, times(1)).createTopic(any(Topic.class));
+        verify(service, times(1)).createTopic(any(TopicRequestDTO.class));
     }
 
     @Test
     public void createBadRequest() throws Exception {
-        doThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST)).when(service).createTopic(any(Topic.class));
+        doThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST)).when(service).createTopic(any(TopicRequestDTO.class));
 
         Topic request = new Topic();
         String json = new ObjectMapper().writeValueAsString(request);
@@ -142,6 +145,6 @@ public class TopicControllerUnitTest {
                 .content(json))
                 .andExpect(status().isBadRequest());
 
-        verify(service, times(1)).createTopic(any(Topic.class));
+        verify(service, times(1)).createTopic(any(TopicRequestDTO.class));
     }
 }

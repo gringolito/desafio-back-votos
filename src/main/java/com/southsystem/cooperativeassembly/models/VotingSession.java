@@ -1,7 +1,5 @@
 package com.southsystem.cooperativeassembly.models;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -13,11 +11,11 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @Entity(name = "voting_sessions")
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class VotingSession {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long voting_session_id;
+    @Column(name = "voting_session_id")
+    private Long votingSessionId;
 
     @NotNull
     @OneToOne
@@ -28,6 +26,5 @@ public class VotingSession {
     private LocalDateTime expires;
 
     @OneToMany(mappedBy = "votingSession")
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private List<Vote> votes;
 }

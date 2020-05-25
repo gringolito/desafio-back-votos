@@ -1,5 +1,8 @@
 package com.southsystem.cooperativeassembly.services;
 
+import com.southsystem.cooperativeassembly.converters.TopicConverter;
+import com.southsystem.cooperativeassembly.dtos.TopicRequestDTO;
+import com.southsystem.cooperativeassembly.dtos.TopicResponseDTO;
 import com.southsystem.cooperativeassembly.models.Topic;
 import com.southsystem.cooperativeassembly.repositories.TopicRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,27 +18,32 @@ public class TopicService {
     @Autowired
     private TopicRepository repository;
 
-    public List<Topic> getAllTopics() {
-        return repository.findAll();
+    @Autowired
+    private TopicConverter converter;
+
+    public List<TopicResponseDTO> getAllTopics() {
+        return converter.toResponseDTO(repository.findAll());
     }
 
-    public Topic getTopic(Long id) {
+    public TopicResponseDTO getTopic(Long id) {
         Topic topic = repository.getOne(id);
         if (topic == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
 
-        return topic;
+        return converter.toResponseDTO(topic);
     }
 
-    public Topic createTopic(Topic topic) {
+    public TopicResponseDTO createTopic(TopicRequestDTO request) {
+        Topic topic = converter.toModel(request);
         validateTopic(topic);
         setCreationDate(topic);
-        return repository.saveAndFlush(topic);
+
+        return converter.toResponseDTO(repository.saveAndFlush(topic));
     }
 
     private void setCreationDate(Topic topic) {
-        topic.setDate(LocalDateTime.now());
+        topic.setCreated(LocalDateTime.now());
     }
 
     private void validateTopic(Topic topic) {

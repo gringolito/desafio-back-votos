@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
@@ -63,12 +64,13 @@ public class VoteService {
         }
 
         String url = cpfValidatorUrl + "/" + vote.getAssociateCpf();
-        AssociateStatus associate = restTemplate.getForObject(url, AssociateStatus.class);
-        if (associate == null) {
+        ResponseEntity<AssociateStatus> response = restTemplate.getForEntity(url, AssociateStatus.class);
+        if (response.getStatusCode() == HttpStatus.OK) {
+            if (response.getBody().getStatus() != "ABLE_TO_VOTE") {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+            }
+        } else {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid associate: " + vote.getAssociateCpf());
-        }
-        if (associate.getStatus() != "ABLE_TO_VOTE") {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
         }
     }
 

@@ -9,3 +9,7 @@ spring:
     hibernate:
       show-sql: true
       ddl-auto: update
+
+app:
+  vote:
+    cpf-validator-url: https://user-info.herokuapp.com/users/

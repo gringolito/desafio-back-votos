@@ -21,7 +21,7 @@ public class VotingSession {
 
     @NotNull
     @OneToOne
-    @JoinColumn(name = "id")
+    @JoinColumn(name = "topic_id")
     private Topic topic;
 
     @NotNull

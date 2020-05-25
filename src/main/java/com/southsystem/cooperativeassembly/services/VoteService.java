@@ -4,6 +4,7 @@ import com.southsystem.cooperativeassembly.models.Vote;
 import com.southsystem.cooperativeassembly.models.VotingSession;
 import com.southsystem.cooperativeassembly.repositories.VoteRepository;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -19,16 +20,11 @@ import java.util.List;
 
 @Service
 public class VoteService {
-    @Data
-    private class AssociateStatus implements Serializable {
-        private String status;
-    }
-
     @Autowired
     private VoteRepository repository;
-
-    private RestTemplate restTemplate;
-
+    @Autowired
+    private VotingSessionService sessionService;
+    private final RestTemplate restTemplate;
     @Value("${app.vote.cpf-validator-url}")
     private String cpfValidatorUrl;
 
@@ -71,7 +67,7 @@ public class VoteService {
         String url = cpfValidatorUrl + "/" + vote.getAssociateCpf();
         ResponseEntity<AssociateStatus> response = restTemplate.getForEntity(url, AssociateStatus.class);
         if (response.getStatusCode() == HttpStatus.OK) {
-            if (response.getBody().getStatus() != "ABLE_TO_VOTE") {
+            if (!response.getBody().getStatus().equals("ABLE_TO_VOTE")) {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
             }
         } else {
@@ -83,8 +79,18 @@ public class VoteService {
         if (vote.getVotingSession() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid voting session.");
         }
+
+        VotingSession session = sessionService.getSession(vote.getVotingSession().getVoting_session_id());
+        vote.setVotingSession(session);
+
         if (vote.getVotingSession().getExpires().isBefore(LocalDateTime.now())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Voting session closed.");
         }
+    }
+
+    @Data
+    @NoArgsConstructor
+    private static class AssociateStatus implements Serializable {
+        private String status;
     }
 }

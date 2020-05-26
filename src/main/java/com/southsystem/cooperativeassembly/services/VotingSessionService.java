@@ -6,13 +6,14 @@ import com.southsystem.cooperativeassembly.converters.VotingSessionConverter;
 import com.southsystem.cooperativeassembly.dtos.VotingSessionReportDTO;
 import com.southsystem.cooperativeassembly.dtos.VotingSessionRequestDTO;
 import com.southsystem.cooperativeassembly.dtos.VotingSessionResponseDTO;
+import com.southsystem.cooperativeassembly.exceptions.VotingSessionNotFoundException;
+import com.southsystem.cooperativeassembly.exceptions.VotingSessionNotValidException;
 import com.southsystem.cooperativeassembly.models.VotingSession;
 import com.southsystem.cooperativeassembly.repositories.VotingSessionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
+import javax.persistence.EntityExistsException;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -37,21 +38,21 @@ public class VotingSessionService {
         return sessionConverter.toResponseDTO(repository.findAll());
     }
 
-    public VotingSessionResponseDTO getSession(Long id) {
+    public VotingSessionResponseDTO getSession(Long id) throws VotingSessionNotFoundException {
         VotingSession session = getVotingSession(id);
-
         return sessionConverter.toResponseDTO(session);
     }
 
-    public VotingSession getVotingSession(Long id) {
-        VotingSession session = repository.getOne(id);
+    public VotingSession getVotingSession(Long id) throws VotingSessionNotFoundException {
+        VotingSession session = repository.findById(id).orElse(null);
         if (session == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+            throw new VotingSessionNotFoundException(id);
         }
+
         return session;
     }
 
-    public VotingSessionReportDTO generateReport(Long id) {
+    public VotingSessionReportDTO generateReport(Long id) throws VotingSessionNotFoundException {
         VotingSession session = getVotingSession(id);
         return VotingSessionReportDTO.builder()
                 .topic(topicConverter.toResponseDTO(session.getTopic()))
@@ -70,24 +71,30 @@ public class VotingSessionService {
         return voteService.getNoVotesBySession(session);
     }
 
-    public VotingSessionResponseDTO openSession(VotingSessionRequestDTO request) {
-        VotingSession session = sessionConverter.toModel(request);
-        validateTopic(session);
-        validateExpires(session);
-        return sessionConverter.toResponseDTO(repository.saveAndFlush(session));
+    public VotingSessionResponseDTO openSession(VotingSessionRequestDTO request) throws VotingSessionNotValidException {
+        validateTopic(request);
+        validateExpires(request);
+
+        VotingSession session;
+        try {
+            session = repository.saveAndFlush(sessionConverter.toModel(request));
+        } catch (EntityExistsException ex) {
+            throw new VotingSessionNotValidException("Voting Session already exists");
+        }
+        return sessionConverter.toResponseDTO(session);
     }
 
-    private void validateExpires(VotingSession session) {
-        if (session.getExpires() == null) {
-            session.setExpires(LocalDateTime.now().plusMinutes(1));
-        } else if (session.getExpires().isBefore(LocalDateTime.now())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Can't create an expired voting session.");
+    private void validateExpires(VotingSessionRequestDTO request) throws VotingSessionNotValidException {
+        if (request.getExpires() == null) {
+            request.setExpires(LocalDateTime.now().plusMinutes(1));
+        } else if (request.getExpires().isBefore(LocalDateTime.now())) {
+            throw new VotingSessionNotValidException("Field expires has already expired");
         }
     }
 
-    private void validateTopic(VotingSession session) {
-        if (session.getTopic() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Topic not found.");
+    private void validateTopic(VotingSessionRequestDTO request) throws VotingSessionNotValidException {
+        if (request.getTopicId() == null) {
+            throw new VotingSessionNotValidException("Missing field topicId");
         }
     }
 }

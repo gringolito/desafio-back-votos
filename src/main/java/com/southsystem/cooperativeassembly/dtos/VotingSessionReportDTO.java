@@ -1,6 +1,5 @@
 package com.southsystem.cooperativeassembly.dtos;
 
-import com.southsystem.cooperativeassembly.models.Topic;
 import lombok.Builder;
 import lombok.Data;
 

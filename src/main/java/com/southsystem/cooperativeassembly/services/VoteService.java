@@ -3,6 +3,7 @@ package com.southsystem.cooperativeassembly.services;
 import com.southsystem.cooperativeassembly.converters.VoteConverter;
 import com.southsystem.cooperativeassembly.dtos.VoteRequestDTO;
 import com.southsystem.cooperativeassembly.dtos.VoteResponseDTO;
+import com.southsystem.cooperativeassembly.exceptions.*;
 import com.southsystem.cooperativeassembly.models.Vote;
 import com.southsystem.cooperativeassembly.models.VotingSession;
 import com.southsystem.cooperativeassembly.repositories.VoteRepository;
@@ -15,25 +16,21 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.server.ResponseStatusException;
 
+import javax.persistence.EntityExistsException;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 public class VoteService {
+    private final RestTemplate restTemplate;
     @Autowired
     private VoteRepository repository;
-
     @Autowired
     private VoteConverter converter;
-
     @Autowired
     private VotingSessionService sessionService;
-
-    private final RestTemplate restTemplate;
-
     @Value("${app.vote.cpf-validator-url}")
     private String cpfValidatorUrl;
 
@@ -45,20 +42,26 @@ public class VoteService {
         return converter.toResponseDTO(repository.findAll());
     }
 
-    public VoteResponseDTO getVote(Long id) {
-        Vote vote = repository.getOne(id);
+    public VoteResponseDTO getVote(Long id) throws VoteNotFoundException {
+        Vote vote = repository.findById(id).orElse(null);
         if (vote == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+            throw new VoteNotFoundException(id);
         }
 
         return converter.toResponseDTO(vote);
     }
 
-    public VoteResponseDTO addVote(VoteRequestDTO request) {
+    public VoteResponseDTO addVote(VoteRequestDTO request) throws VoteNotAuthorizedException, VoteNotValidException, VotingSessionExpiredException {
         validateVotingSession(request);
         validateAssociate(request);
-        Vote vote = converter.toModel(request);
-        return converter.toResponseDTO(repository.saveAndFlush(vote));
+
+        Vote vote;
+        try {
+            vote = repository.saveAndFlush(converter.toModel(request));
+        } catch (EntityExistsException ex) {
+            throw new VoteNotValidException("Vote already exists");
+        }
+        return converter.toResponseDTO(vote);
     }
 
     public Long getYesVotesBySession(VotingSession session) {
@@ -69,31 +72,43 @@ public class VoteService {
         return repository.countVotesByVotingSessionAndVote(session, "No");
     }
 
-    private void validateAssociate(VoteRequestDTO request) {
-        VotingSession session = sessionService.getVotingSession(request.getVotingSessionId());
+    private void validateAssociate(VoteRequestDTO request) throws VoteNotAuthorizedException, VoteNotValidException {
+        VotingSession session;
+        try {
+            session = sessionService.getVotingSession(request.getVotingSessionId());
+        } catch (VotingSessionNotFoundException ex) {
+            throw new VoteNotValidException("Invalid votingSessionId: " + request.getVotingSessionId());
+        }
+
         if (repository.findFirstByVotingSessionAndCpf(session, request.getCpf()) != null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Associate has already voted in this session.");
+            throw new VoteNotAuthorizedException("This CPF has already voted in this session: " + request.getCpf());
         }
 
         String url = cpfValidatorUrl + "/" + request.getCpf();
         ResponseEntity<AssociateStatus> response = restTemplate.getForEntity(url, AssociateStatus.class);
         if (response.getStatusCode() == HttpStatus.OK) {
             if (!response.getBody().getStatus().equals("ABLE_TO_VOTE")) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+                throw new VoteNotAuthorizedException("This CPF is not able to vote in this session: " + request.getCpf());
             }
         } else {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid CPF: " + request.getCpf());
+            throw new VoteNotValidException("Invalid CPF: " + request.getCpf() + ". Verify if it is in format XXXXXXXXX-XX.");
         }
     }
 
-    private void validateVotingSession(VoteRequestDTO request) {
+    private void validateVotingSession(VoteRequestDTO request) throws VoteNotValidException, VotingSessionExpiredException {
         if (request.getVotingSessionId() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid voting session.");
+            throw new VoteNotValidException("Missing field votingSessionId");
         }
 
-        VotingSession session = sessionService.getVotingSession(request.getVotingSessionId());
+        VotingSession session;
+        try {
+            session = sessionService.getVotingSession(request.getVotingSessionId());
+        } catch (VotingSessionNotFoundException ex) {
+            throw new VoteNotValidException("Invalid votingSessionId: " + request.getVotingSessionId());
+        }
+
         if (session.getExpires().isBefore(LocalDateTime.now())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Voting session closed.");
+            throw new VotingSessionExpiredException(session.getExpires());
         }
     }
 

@@ -3,6 +3,8 @@ package com.southsystem.cooperativeassembly.api.v1.controllers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.southsystem.cooperativeassembly.dtos.TopicRequestDTO;
 import com.southsystem.cooperativeassembly.dtos.TopicResponseDTO;
+import com.southsystem.cooperativeassembly.exceptions.TopicNotFoundException;
+import com.southsystem.cooperativeassembly.exceptions.TopicNotValidException;
 import com.southsystem.cooperativeassembly.services.TopicService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,6 +49,8 @@ public class TopicControllerUnitTest {
 
         mvc.perform(get("/api/v1/topics"))
                 .andExpect(status().is5xxServerError());
+
+        verify(service, times(1)).getAllTopics();
     }
 
     @Test
@@ -81,10 +85,16 @@ public class TopicControllerUnitTest {
 
     @Test
     public void getNotFound() throws Exception {
-        doThrow(new ResponseStatusException(HttpStatus.NOT_FOUND)).when(service).getTopic(Long.valueOf(1));
+        doThrow(new TopicNotFoundException(Long.valueOf(1))).when(service).getTopic(Long.valueOf(1));
 
         mvc.perform(get("/api/v1/topics/1"))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("uri").value("/api/v1/topics/1"))
+                .andExpect(jsonPath("status").value(404))
+                .andExpect(jsonPath("timestamp").isNotEmpty())
+                .andExpect(jsonPath("message").value("Topic Not Found"))
+                .andExpect(jsonPath("detail").value("Invalid Topic ID: 1"));
 
         verify(service, times(1)).getTopic(Long.valueOf(1));
     }
@@ -114,9 +124,8 @@ public class TopicControllerUnitTest {
         verify(service, times(1)).createTopic(any(TopicRequestDTO.class));
     }
 
-    @Test(expected = Exception.class)
     public void createFail() throws Exception {
-        doThrow(Exception.class).when(service).createTopic(any(TopicRequestDTO.class));
+        doThrow(new TopicNotValidException("Topic already exists")).when(service).createTopic(any(TopicRequestDTO.class));
 
         TopicRequestDTO request = new TopicRequestDTO();
         request.setTopic("Intern Salary Raise");
@@ -125,7 +134,13 @@ public class TopicControllerUnitTest {
         mvc.perform(post("/api/v1/topics")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
-                .andExpect(status().is5xxServerError());
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("uri").value("/api/v1/topics"))
+                .andExpect(jsonPath("status").value(400))
+                .andExpect(jsonPath("timestamp").isNotEmpty())
+                .andExpect(jsonPath("message").value("Invalid Topic"))
+                .andExpect(jsonPath("detail").value("Topic already exists"));
 
         verify(service, times(1)).createTopic(any(TopicRequestDTO.class));
     }
@@ -139,7 +154,7 @@ public class TopicControllerUnitTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
                 .andExpect(status().isBadRequest())
-                .andDo(print())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("message").value("Request Field-level Validation Failed"))
                 .andExpect(jsonPath("details").isNotEmpty())
                 .andExpect(jsonPath("details.topic").value("must not be null, but received: null"));
@@ -157,7 +172,7 @@ public class TopicControllerUnitTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
                 .andExpect(status().isBadRequest())
-                .andDo(print())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("message").value("Request Field-level Validation Failed"))
                 .andExpect(jsonPath("details").isNotEmpty())
                 .andExpect(jsonPath("details.topic").value("must not be empty, but received: "));

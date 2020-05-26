@@ -11,11 +11,9 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 
@@ -124,12 +122,12 @@ public class TopicControllerUnitTest {
         verify(service, times(1)).createTopic(any(TopicRequestDTO.class));
     }
 
+    @Test
     public void createFail() throws Exception {
-        doThrow(new TopicNotValidException("Topic already exists")).when(service).createTopic(any(TopicRequestDTO.class));
-
         TopicRequestDTO request = new TopicRequestDTO();
         request.setTopic("Intern Salary Raise");
         String json = new ObjectMapper().writeValueAsString(request);
+        doThrow(new TopicNotValidException("Topic already exists")).when(service).createTopic(request);
 
         mvc.perform(post("/api/v1/topics")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -142,11 +140,11 @@ public class TopicControllerUnitTest {
                 .andExpect(jsonPath("message").value("Invalid Topic"))
                 .andExpect(jsonPath("detail").value("Topic already exists"));
 
-        verify(service, times(1)).createTopic(any(TopicRequestDTO.class));
+        verify(service, times(1)).createTopic(request);
     }
 
     @Test
-    public void createBadRequestNullTopic() throws Exception {
+    public void createValidationNullTopic() throws Exception {
         TopicRequestDTO request = new TopicRequestDTO();
         String json = new ObjectMapper().writeValueAsString(request);
 
@@ -157,13 +155,13 @@ public class TopicControllerUnitTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("message").value("Request Field-level Validation Failed"))
                 .andExpect(jsonPath("details").isNotEmpty())
-                .andExpect(jsonPath("details.topic").value("must not be null, but received: null"));
+                .andExpect(jsonPath("details.topic").value("must not be empty, but received: null"));
 
         verify(service, times(0)).createTopic(any(TopicRequestDTO.class));
     }
 
     @Test
-    public void createBadRequestEmptyTopic() throws Exception {
+    public void createValidationEmptyTopic() throws Exception {
         TopicRequestDTO request = new TopicRequestDTO();
         request.setTopic("");
         String json = new ObjectMapper().writeValueAsString(request);

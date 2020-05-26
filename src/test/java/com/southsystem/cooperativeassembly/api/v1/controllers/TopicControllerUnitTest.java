@@ -3,7 +3,6 @@ package com.southsystem.cooperativeassembly.api.v1.controllers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.southsystem.cooperativeassembly.dtos.TopicRequestDTO;
 import com.southsystem.cooperativeassembly.dtos.TopicResponseDTO;
-import com.southsystem.cooperativeassembly.models.Topic;
 import com.southsystem.cooperativeassembly.services.TopicService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -65,7 +64,6 @@ public class TopicControllerUnitTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("id").value(topic.getId()))
                 .andExpect(jsonPath("topic").value(topic.getTopic()))
-                .andExpect(jsonPath("description").value(topic.getDescription()))
                 .andExpect(jsonPath("created").value(topic.getCreated().toString()));
 
         verify(service, times(1)).getTopic(Long.valueOf(1));
@@ -111,7 +109,6 @@ public class TopicControllerUnitTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("id").value(response.getId()))
                 .andExpect(jsonPath("topic").value(response.getTopic()))
-                .andExpect(jsonPath("description").value(response.getDescription()))
                 .andExpect(jsonPath("created").value(response.getCreated().toString()));
 
         verify(service, times(1)).createTopic(any(TopicRequestDTO.class));
@@ -134,17 +131,37 @@ public class TopicControllerUnitTest {
     }
 
     @Test
-    public void createBadRequest() throws Exception {
-        doThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST)).when(service).createTopic(any(TopicRequestDTO.class));
-
-        Topic request = new Topic();
+    public void createBadRequestNullTopic() throws Exception {
+        TopicRequestDTO request = new TopicRequestDTO();
         String json = new ObjectMapper().writeValueAsString(request);
 
         mvc.perform(post("/api/v1/topics")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andDo(print())
+                .andExpect(jsonPath("message").value("Request Field-level Validation Failed"))
+                .andExpect(jsonPath("details").isNotEmpty())
+                .andExpect(jsonPath("details.topic").value("must not be null, but received: null"));
 
-        verify(service, times(1)).createTopic(any(TopicRequestDTO.class));
+        verify(service, times(0)).createTopic(any(TopicRequestDTO.class));
+    }
+
+    @Test
+    public void createBadRequestEmptyTopic() throws Exception {
+        TopicRequestDTO request = new TopicRequestDTO();
+        request.setTopic("");
+        String json = new ObjectMapper().writeValueAsString(request);
+
+        mvc.perform(post("/api/v1/topics")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+                .andExpect(status().isBadRequest())
+                .andDo(print())
+                .andExpect(jsonPath("message").value("Request Field-level Validation Failed"))
+                .andExpect(jsonPath("details").isNotEmpty())
+                .andExpect(jsonPath("details.topic").value("must not be empty, but received: "));
+
+        verify(service, times(0)).createTopic(any(TopicRequestDTO.class));
     }
 }

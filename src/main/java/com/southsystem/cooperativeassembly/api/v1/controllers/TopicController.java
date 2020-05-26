@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -32,7 +33,7 @@ public class TopicController {
     }
 
     @PostMapping
-    public ResponseEntity<TopicResponseDTO> create(@RequestBody final TopicRequestDTO request) throws TopicNotValidException {
+    public ResponseEntity<TopicResponseDTO> create(@Valid @RequestBody final TopicRequestDTO request) throws TopicNotValidException {
         TopicResponseDTO response = service.createTopic(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }

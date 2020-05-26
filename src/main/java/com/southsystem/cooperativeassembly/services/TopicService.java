@@ -36,10 +36,8 @@ public class TopicService {
     }
 
     public TopicResponseDTO createTopic(TopicRequestDTO request) throws TopicNotValidException {
-        validateTopic(request);
-
         Topic topic = converter.toModel(request);
-        setCreationDate(topic);
+        setCreationTimestamp(topic);
         try {
             topic = repository.saveAndFlush(topic);
         } catch (EntityExistsException ex) {
@@ -48,13 +46,7 @@ public class TopicService {
         return converter.toResponseDTO(topic);
     }
 
-    private void setCreationDate(Topic topic) {
+    private void setCreationTimestamp(Topic topic) {
         topic.setCreated(LocalDateTime.now());
-    }
-
-    private void validateTopic(TopicRequestDTO request) throws TopicNotValidException {
-        if (request.getTopic() == null || request.getTopic().isEmpty()) {
-            throw new TopicNotValidException("Missing field topic");
-        }
     }
 }

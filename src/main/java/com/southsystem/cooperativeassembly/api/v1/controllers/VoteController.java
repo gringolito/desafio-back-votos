@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -34,7 +35,7 @@ public class VoteController {
     }
 
     @PostMapping
-    public ResponseEntity<VoteResponseDTO> create(@RequestBody final VoteRequestDTO request) throws VoteNotAuthorizedException, VoteNotValidException, VotingSessionExpiredException {
+    public ResponseEntity<VoteResponseDTO> create(@Valid @RequestBody final VoteRequestDTO request) throws VoteNotAuthorizedException, VoteNotValidException, VotingSessionExpiredException {
         VoteResponseDTO response = service.addVote(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }

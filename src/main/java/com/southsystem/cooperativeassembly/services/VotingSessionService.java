@@ -6,6 +6,8 @@ import com.southsystem.cooperativeassembly.converters.VotingSessionConverter;
 import com.southsystem.cooperativeassembly.dtos.VotingSessionReportDTO;
 import com.southsystem.cooperativeassembly.dtos.VotingSessionRequestDTO;
 import com.southsystem.cooperativeassembly.dtos.VotingSessionResponseDTO;
+import com.southsystem.cooperativeassembly.exceptions.TopicNotFoundException;
+import com.southsystem.cooperativeassembly.exceptions.VoteNotValidException;
 import com.southsystem.cooperativeassembly.exceptions.VotingSessionNotFoundException;
 import com.southsystem.cooperativeassembly.exceptions.VotingSessionNotValidException;
 import com.southsystem.cooperativeassembly.models.VotingSession;
@@ -27,6 +29,9 @@ public class VotingSessionService {
 
     @Autowired
     TopicConverter topicConverter;
+
+    @Autowired
+    TopicService topicService;
 
     @Autowired
     VoteConverter voteConverter;
@@ -55,9 +60,10 @@ public class VotingSessionService {
     public VotingSessionReportDTO generateReport(Long id) throws VotingSessionNotFoundException {
         VotingSession session = getVotingSession(id);
         return VotingSessionReportDTO.builder()
+                .id(session.getVotingSessionId())
                 .topic(topicConverter.toResponseDTO(session.getTopic()))
                 .votes(voteConverter.toResponseDTO(session.getVotes()))
-                .expired(session.getExpires().isBefore(LocalDateTime.now()))
+                .expired(isExpired(session))
                 .yes(getYesVotes(session))
                 .no(getNoVotes(session))
                 .build();
@@ -73,7 +79,7 @@ public class VotingSessionService {
 
     public VotingSessionResponseDTO openSession(VotingSessionRequestDTO request) throws VotingSessionNotValidException {
         validateTopic(request);
-        validateExpires(request);
+        setDefaultExpires(request);
 
         VotingSession session;
         try {
@@ -84,17 +90,21 @@ public class VotingSessionService {
         return sessionConverter.toResponseDTO(session);
     }
 
-    private void validateExpires(VotingSessionRequestDTO request) throws VotingSessionNotValidException {
+    public boolean isExpired(VotingSession session) {
+        return session.getExpires().isBefore(LocalDateTime.now());
+    }
+
+    private void setDefaultExpires(VotingSessionRequestDTO request) {
         if (request.getExpires() == null) {
             request.setExpires(LocalDateTime.now().plusMinutes(1));
-        } else if (request.getExpires().isBefore(LocalDateTime.now())) {
-            throw new VotingSessionNotValidException("Field expires has already expired");
         }
     }
 
     private void validateTopic(VotingSessionRequestDTO request) throws VotingSessionNotValidException {
-        if (request.getTopicId() == null) {
-            throw new VotingSessionNotValidException("Missing field topicId");
+        try {
+            topicService.getTopic(request.getTopicId());
+        } catch (TopicNotFoundException ex) {
+            throw new VotingSessionNotValidException("Invalid topicId: " + request.getTopicId());
         }
     }
 }

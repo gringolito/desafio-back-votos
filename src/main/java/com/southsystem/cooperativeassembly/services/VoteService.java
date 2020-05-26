@@ -15,6 +15,7 @@ import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import javax.persistence.EntityExistsException;
@@ -52,8 +53,7 @@ public class VoteService {
     }
 
     public VoteResponseDTO addVote(VoteRequestDTO request) throws VoteNotAuthorizedException, VoteNotValidException, VotingSessionExpiredException {
-        validateVotingSession(request);
-        validateAssociate(request);
+        validateVote(request);
 
         Vote vote;
         try {
@@ -65,14 +65,17 @@ public class VoteService {
     }
 
     public Long getYesVotesBySession(VotingSession session) {
-        return repository.countVotesByVotingSessionAndVote(session, "Yes");
+        return repository.countVotesByVotingSessionAndVote(session, "Sim");
     }
 
     public Long getNoVotesBySession(VotingSession session) {
-        return repository.countVotesByVotingSessionAndVote(session, "No");
+        return repository.countVotesByVotingSessionAndVote(session, "Não");
     }
 
-    private void validateAssociate(VoteRequestDTO request) throws VoteNotAuthorizedException, VoteNotValidException {
+    private void validateVote(VoteRequestDTO request) throws VoteNotAuthorizedException, VoteNotValidException, VotingSessionExpiredException {
+        /*
+         * Verify if voting session exists and its open
+         */
         VotingSession session;
         try {
             session = sessionService.getVotingSession(request.getVotingSessionId());
@@ -80,35 +83,34 @@ public class VoteService {
             throw new VoteNotValidException("Invalid votingSessionId: " + request.getVotingSessionId());
         }
 
+        if (sessionService.isExpired(session)) {
+            throw new VotingSessionExpiredException(session);
+        }
+
+        /*
+         * Verify if this CFP hasn't yet voted on this session
+         */
         if (repository.findFirstByVotingSessionAndCpf(session, request.getCpf()) != null) {
             throw new VoteNotAuthorizedException("This CPF has already voted in this session: " + request.getCpf());
         }
 
+        /*
+         * Verify if this CPF is allowed to vote on this session
+         */
         String url = cpfValidatorUrl + "/" + request.getCpf();
-        ResponseEntity<AssociateStatus> response = restTemplate.getForEntity(url, AssociateStatus.class);
+        ResponseEntity<AssociateStatus> response;
+        try {
+            response = restTemplate.getForEntity(url, AssociateStatus.class);
+        } catch (HttpClientErrorException exception) {
+            throw new VoteNotValidException("Invalid CPF: " + request.getCpf());
+        }
+
         if (response.getStatusCode() == HttpStatus.OK) {
             if (!response.getBody().getStatus().equals("ABLE_TO_VOTE")) {
                 throw new VoteNotAuthorizedException("This CPF is not able to vote in this session: " + request.getCpf());
             }
         } else {
-            throw new VoteNotValidException("Invalid CPF: " + request.getCpf() + ". Verify if it is in format XXXXXXXXX-XX.");
-        }
-    }
-
-    private void validateVotingSession(VoteRequestDTO request) throws VoteNotValidException, VotingSessionExpiredException {
-        if (request.getVotingSessionId() == null) {
-            throw new VoteNotValidException("Missing field votingSessionId");
-        }
-
-        VotingSession session;
-        try {
-            session = sessionService.getVotingSession(request.getVotingSessionId());
-        } catch (VotingSessionNotFoundException ex) {
-            throw new VoteNotValidException("Invalid votingSessionId: " + request.getVotingSessionId());
-        }
-
-        if (session.getExpires().isBefore(LocalDateTime.now())) {
-            throw new VotingSessionExpiredException(session.getExpires());
+            throw new VoteNotValidException("Invalid CPF: " + request.getCpf());
         }
     }
 

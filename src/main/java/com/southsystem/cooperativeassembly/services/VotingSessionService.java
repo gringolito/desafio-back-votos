@@ -7,7 +7,6 @@ import com.southsystem.cooperativeassembly.dtos.VotingSessionReportDTO;
 import com.southsystem.cooperativeassembly.dtos.VotingSessionRequestDTO;
 import com.southsystem.cooperativeassembly.dtos.VotingSessionResponseDTO;
 import com.southsystem.cooperativeassembly.exceptions.TopicNotFoundException;
-import com.southsystem.cooperativeassembly.exceptions.VoteNotValidException;
 import com.southsystem.cooperativeassembly.exceptions.VotingSessionNotFoundException;
 import com.southsystem.cooperativeassembly.exceptions.VotingSessionNotValidException;
 import com.southsystem.cooperativeassembly.models.VotingSession;

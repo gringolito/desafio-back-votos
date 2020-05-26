@@ -74,7 +74,7 @@ public class ErrorHandlingController extends ResponseEntityExceptionHandler {
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
         Map<String, String> details = new HashMap<>();
-        for(FieldError error : ex.getBindingResult().getFieldErrors()) {
+        for (FieldError error : ex.getBindingResult().getFieldErrors()) {
             String message = error.getDefaultMessage() + ", but received: " +
                     (error.getRejectedValue() == null ? "null" : error.getRejectedValue().toString());
             details.put(error.getField(), message);
@@ -85,7 +85,7 @@ public class ErrorHandlingController extends ResponseEntityExceptionHandler {
                 .details(details)
                 .status(status.value())
                 .timestamp(LocalDateTime.now())
-                .uri(((ServletWebRequest)request).getRequest().getRequestURI())
+                .uri(((ServletWebRequest) request).getRequest().getRequestURI())
                 .build();
         return new ResponseEntity<>(error, status);
     }

@@ -17,15 +17,21 @@ $ mvn test
 
 ## How to run the application
 
-### Dependencies
+### Running dependencies
 
 #### PostgreSQL database
 
-TODO
+PostgreSQL can be ran containerized by Docker, to do it just run the following command, it will create a new PostgreSQL with a `cooperative_assembly` database in it: 
 
-### Running application
+```shell script
+$ docker run -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=cooperative_assembly -p 5432:5432 postgres:11.5-alpine
+```
 
-Build the application (see [build](#how-to-build-the-application) section), then run it passing the environment variables to database connection:
+It maybe will take a while to finish at the first time if you do not have the `postgres:11.5-alpine` image downloaded in you computer.
+
+### Running the application
+
+With all dependencies running, just build the application (see [build](#how-to-build-the-application) section), then run it passing the environment variables to database connection:
 
 ```shell script
 $ export DB_URL=jdbc:postgresql://localhost:5432/cooperative_assembly
@@ -115,7 +121,7 @@ http://localhost:8080/swagger-ui.html
 ## Examples
 A Postman exported Collection with some examples of API call is available on the project source tree.
 
-- [postman_collection.json](Postman/CooperativeAssembly.postman_collection.json)
+- [postman_collection.json](postman/CooperativeAssembly.postman_collection.json)
 
 # Desafio Técnico
 ## Objetivo

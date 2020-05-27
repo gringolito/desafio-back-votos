@@ -1,3 +1,122 @@
+# Cooperative Assembly Voting API
+
+Quick guide to build, test, run, and use this application.
+
+## How to build the application
+
+```shell script
+$ mvn install
+$ mvn package
+```
+
+## How to run the tests
+
+```shell script
+$ mvn test
+```
+
+## How to run the application
+
+### Dependencies
+
+#### PostgreSQL database
+
+TODO
+
+### Running application
+
+Build the application (See [build](#how-to-build-the-application) section)
+
+```shell script
+$ export DB_URL=jdbc:postgresql://localhost:5432/cooperative_assembly
+$ export DB_USERNAME=postgres
+$ export DB_PASSWORD=postgres
+$ java -jar ./target/cooperative-assemble-0.0.1.SNAPSHOT.jar
+```
+
+## How to use the application
+
+The application will be listening by default on HTTP port 8080.
+
+## Brief Endpoints documentation
+
+### Topics API
+#### Create Topic
+```http request
+POST http://localhost:8080/api/v1/topics/
+{
+    "topic": "A new topic to vote.",
+    "description": "Some pretty description about this topic."
+}
+``` 
+
+#### List Topics
+```http request
+GET http://localhost:8080/api/v1/topics/
+``` 
+
+#### Get Topic
+```http request
+GET http://localhost:8080/api/v1/topics/{id}
+``` 
+
+### Voting Sessions API
+#### Open Voting Session
+```http request
+POST http://localhost:8080/api/v1/voting-sessions/
+{
+	"topicId": 1,
+	"expires": "2020-11-30T12:30:00"
+}
+``` 
+
+#### List Voting Sessions
+```http request
+GET http://localhost:8080/api/v1/voting-sessions/
+``` 
+
+#### Get Voting Session
+```http request
+GET http://localhost:8080/api/v1/voting-sessions/{id}
+``` 
+
+#### Voting Session Report
+```http request
+GET http://localhost:8080/api/v1/voting-sessions/{id}/report
+``` 
+
+### Votes API
+#### Add New Vote
+```http request
+POST http://localhost:8080/api/v1/votes/
+{
+	"cpf": "123456789-10",
+	"vote": "Sim",
+	"votingSessionId": 1
+}
+``` 
+
+#### List Votes
+```http request
+GET http://localhost:8080/api/v1/votes/
+``` 
+
+#### Get Vote
+```http request
+GET http://localhost:8080/api/v1/votes/{id}
+``` 
+
+## Swagger documentation
+This API is build with Swagger documentation generator. The complete API documentation can be retrieved in:
+```http request
+http://localhost:8080/swagger-ui.html
+``` 
+
+## Examples
+A Postman exported Collection with some examples of API call is available on the project source tree.
+
+- [postman_collection.json](Postman/CooperativeAssembly.postman_collection.json)
+
 # Desafio Técnico
 ## Objetivo
 No cooperativismo, cada associado possui um voto e as decisões são tomadas em assembleias, por votação. A partir disso, você precisa criar uma solução back-end para gerenciar essas sessões de votação. Essa solução deve ser executada na nuvem e promover as seguintes funcionalidades através de uma API REST:

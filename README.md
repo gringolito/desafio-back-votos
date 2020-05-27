@@ -25,7 +25,7 @@ TODO
 
 ### Running application
 
-Build the application (See [build](#how-to-build-the-application) section)
+Build the application (see [build](#how-to-build-the-application) section), then run it passing the environment variables to database connection:
 
 ```shell script
 $ export DB_URL=jdbc:postgresql://localhost:5432/cooperative_assembly
@@ -65,8 +65,8 @@ GET http://localhost:8080/api/v1/topics/{id}
 ```http request
 POST http://localhost:8080/api/v1/voting-sessions/
 {
-	"topicId": 1,
-	"expires": "2020-11-30T12:30:00"
+    "topicId": 1,
+    "expires": "2020-11-30T12:30:00"
 }
 ``` 
 
@@ -90,9 +90,9 @@ GET http://localhost:8080/api/v1/voting-sessions/{id}/report
 ```http request
 POST http://localhost:8080/api/v1/votes/
 {
-	"cpf": "123456789-10",
-	"vote": "Sim",
-	"votingSessionId": 1
+    "cpf": "123456789-10",
+    "vote": "Sim",
+    "votingSessionId": 1
 }
 ``` 
 
